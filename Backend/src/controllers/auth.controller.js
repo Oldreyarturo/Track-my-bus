@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt    from 'jsonwebtoken';
 import pool   from '../config/db.js';
 
-const SALT = 10;
+const SALT = 12;
 
 export async function registro(req, res, next) {
   const { nombre, apellidos, email, telefono, password, es_estudiante } = req.body;
