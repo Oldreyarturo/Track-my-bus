@@ -1,3 +1,4 @@
+import { encrypt, decrypt } from '../utils/crypto.js';
 import bcrypt from 'bcrypt';
 import jwt    from 'jsonwebtoken';
 import pool   from '../config/db.js';
@@ -67,11 +68,12 @@ export async function me(req, res, next) {
   try {
     const [rows] = await pool.query(
       `SELECT u.id,u.nombre,u.apellidos,u.email,u.telefono,
-              u.foto_url,u.es_estudiante,u.credencial_valida,r.nombre as rol
+      u.foto_url,u.credencial_url,u.es_estudiante,u.credencial_valida,r.nombre as rol
        FROM usuarios u JOIN roles r ON r.id=u.rol_id WHERE u.id=?`,
       [req.user.id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (rows[0].credencial_url) rows[0].credencial_url = decrypt(rows[0].credencial_url);
     res.json(rows[0]);
   } catch(err) { next(err); }
 }
@@ -82,7 +84,7 @@ export async function subirCredencial(req, res, next) {
   try {
     await pool.query(
       'UPDATE usuarios SET credencial_url=?, credencial_valida=FALSE WHERE id=?',
-      [credencial_url, req.user.id]
+      [encrypt(credencial_url), req.user.id]
     );
     res.json({ message: 'Credencial enviada, pendiente de validación' });
   } catch(err) { next(err); }
