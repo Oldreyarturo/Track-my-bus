@@ -15,11 +15,19 @@ export default function Dashboard() {
   }, [])
 
   const cards = resumen ? [
+<<<<<<< HEAD
     { label: 'Unidades totales',   value: resumen.unidades_totales,   icon: '🚌', color: 'blue' },
     { label: 'Rutas activas',      value: resumen.rutas_activas,      icon: '🗺️',  color: 'indigo' },
     { label: 'Buses en ruta',      value: resumen.unidades_en_ruta,   icon: '📍', color: 'green' },
     { label: 'Incidencias activas',value: resumen.incidencias_activas,icon: '⚠️',  color: 'yellow' },
     { label: 'Boletos hoy',        value: resumen.boletos_hoy,        icon: '🎫', color: 'purple' },
+=======
+    { label: 'Unidades totales',    value: resumen.unidades_totales,    icon: '🚌', color: 'blue' },
+    { label: 'Rutas activas',       value: resumen.rutas_activas,       icon: '🗺️',  color: 'indigo' },
+    { label: 'Buses en ruta',       value: resumen.unidades_en_ruta,    icon: '📍', color: 'green' },
+    { label: 'Incidencias activas', value: resumen.incidencias_activas, icon: '⚠️',  color: 'yellow' },
+    { label: 'Boletos hoy',         value: resumen.boletos_hoy,         icon: '🎫', color: 'purple' },
+>>>>>>> origin/master
   ] : []
 
   const colorMap = {
@@ -51,11 +59,21 @@ export default function Dashboard() {
         )}
 
         {/* Navegación rápida */}
+<<<<<<< HEAD
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
             { to: '/dashboard/rutas',         icon: '🗺️',  label: 'Gestionar rutas',    desc: 'Crear y editar rutas' },
             { to: '/dashboard/unidades',       icon: '🚌', label: 'Gestionar unidades', desc: 'Flota de autobuses' },
             { to: '/dashboard/mantenimiento',  icon: '🔧', label: 'Mantenimiento',      desc: 'Órdenes y alertas' },
+=======
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { to: '/dashboard/rutas',        icon: '🗺️',  label: 'Gestionar rutas',    desc: 'Crear y editar rutas' },
+            { to: '/dashboard/unidades',      icon: '🚌', label: 'Gestionar unidades', desc: 'Flota de autobuses' },
+            { to: '/dashboard/mantenimiento', icon: '🔧', label: 'Mantenimiento',      desc: 'Órdenes y alertas' },
+            { to: '/dashboard/incidencias',   icon: '⚠️',  label: 'Incidencias',        desc: 'Ver y resolver incidencias' },
+            { to: '/dashboard/horarios', icon: '🕐', label: 'Horarios', desc: 'Gestionar horarios de rutas' },
+>>>>>>> origin/master
           ].map(item => (
             <Link key={item.to} to={item.to}
               className="bg-white rounded-2xl shadow p-6 hover:shadow-md transition flex items-start gap-4">
@@ -70,4 +88,8 @@ export default function Dashboard() {
       </div>
     </div>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/master
