@@ -1,0 +1,98 @@
+import bcrypt from 'bcrypt';
+import jwt    from 'jsonwebtoken';
+import pool   from '../config/db.js';
+
+const SALT = 10;
+
+export async function registro(req, res, next) {
+  const { nombre, apellidos, email, telefono, password, es_estudiante } = req.body;
+  if (!nombre || !email || !password)
+    return res.status(400).json({ error: 'nombre, email y password son requeridos' });
+  try {
+    const [existe] = await pool.query('SELECT id FROM usuarios WHERE email = ?', [email]);
+    if (existe.length) return res.status(409).json({ error: 'Email ya registrado' });
+
+    const hash = await bcrypt.hash(password, SALT);
+    const [r] = await pool.query(
+      `INSERT INTO usuarios (rol_id,nombre,apellidos,email,telefono,password_hash,es_estudiante)
+       VALUES (4,?,?,?,?,?,?)`,
+      [nombre, apellidos||null, email, telefono||null, hash, es_estudiante?1:0]
+    );
+    res.status(201).json({ message: 'Usuario registrado', id: r.insertId });
+  } catch(err) { next(err); }
+}
+
+export async function login(req, res, next) {
+  const { email, password } = req.body;
+  if (!email || !password)
+    return res.status(400).json({ error: 'email y password son requeridos' });
+  try {
+    const [rows] = await pool.query(
+      `SELECT u.id,u.nombre,u.apellidos,u.email,u.password_hash,
+              u.rol_id,r.nombre as rol,u.activo,u.es_estudiante,u.credencial_valida
+       FROM usuarios u JOIN roles r ON r.id=u.rol_id WHERE u.email=?`,
+      [email]
+    );
+    if (!rows.length) return res.status(401).json({ error: 'Credenciales inválidas' });
+    const user = rows[0];
+    if (!user.activo) return res.status(403).json({ error: 'Cuenta desactivada' });
+    if (!await bcrypt.compare(password, user.password_hash))
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+
+    const token = jwt.sign(
+      { id: user.id, rol_id: user.rol_id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+    const expira = new Date();
+    expira.setDate(expira.getDate() + 7);
+    await pool.query('INSERT INTO sesiones (usuario_id,token,expira_at) VALUES (?,?,?)',
+      [user.id, token, expira]);
+
+    const { password_hash, ...userData } = user;
+    res.json({ token, usuario: userData });
+  } catch(err) { next(err); }
+}
+
+export async function logout(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(400).json({ error: 'Token no proporcionado' });
+  try {
+    await pool.query('DELETE FROM sesiones WHERE token = ?', [token]);
+    res.json({ message: 'Sesión cerrada' });
+  } catch(err) { next(err); }
+}
+
+export async function me(req, res, next) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT u.id,u.nombre,u.apellidos,u.email,u.telefono,
+              u.foto_url,u.es_estudiante,u.credencial_valida,r.nombre as rol
+       FROM usuarios u JOIN roles r ON r.id=u.rol_id WHERE u.id=?`,
+      [req.user.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Usuario no encontrado' });
+    res.json(rows[0]);
+  } catch(err) { next(err); }
+}
+
+export async function subirCredencial(req, res, next) {
+  const { credencial_url } = req.body;
+  if (!credencial_url) return res.status(400).json({ error: 'credencial_url es requerida' });
+  try {
+    await pool.query(
+      'UPDATE usuarios SET credencial_url=?, credencial_valida=FALSE WHERE id=?',
+      [credencial_url, req.user.id]
+    );
+    res.json({ message: 'Credencial enviada, pendiente de validación' });
+  } catch(err) { next(err); }
+}
+
+export async function validarCredencial(req, res, next) {
+  const { valida } = req.body;
+  try {
+    await pool.query('UPDATE usuarios SET credencial_valida=? WHERE id=?',
+      [valida?1:0, req.params.id]);
+    res.json({ message: `Credencial ${valida ? 'aprobada' : 'rechazada'}` });
+  } catch(err) { next(err); }
+}
